@@ -482,6 +482,11 @@ BaiduPCS-Go ls <目录>
 
 ### 可选参数
 ```
+-l: 详细显示
+-t: 根据修改时间排序, 最新的在前
+-S: 根据文件大小排序, 大的在前
+-X: 根据扩展名排序
+-r: 反转排序结果
 -asc: 升序排序
 -desc: 降序排序
 -time: 根据时间排序
@@ -502,6 +507,21 @@ BaiduPCS-Go ls -desc 我的资源
 
 # 按文件大小降序排序
 BaiduPCS-Go ls -size -desc 我的资源
+
+# 按修改时间排序, 最新的在前
+BaiduPCS-Go ls -lt 我的资源
+
+# 按修改时间排序, 最旧的在前
+BaiduPCS-Go ls -ltr 我的资源
+
+# 按文件大小排序, 大的在前
+BaiduPCS-Go ls -lS 我的资源
+
+# 按文件大小排序, 小的在前
+BaiduPCS-Go ls -lSr 我的资源
+
+# 按扩展名排序
+BaiduPCS-Go ls -lX 我的资源
 
 # 使用通配符
 BaiduPCS-Go ls /我的*

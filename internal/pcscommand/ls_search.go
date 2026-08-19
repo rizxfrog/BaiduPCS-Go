@@ -2,19 +2,24 @@ package pcscommand
 
 import (
 	"fmt"
+	"os"
+	"path"
+	"sort"
+	"strconv"
+	"strings"
+
+	"github.com/olekukonko/tablewriter"
 	"github.com/qjfoidnh/BaiduPCS-Go/baidupcs"
 	"github.com/qjfoidnh/BaiduPCS-Go/pcstable"
 	"github.com/qjfoidnh/BaiduPCS-Go/pcsutil/converter"
 	"github.com/qjfoidnh/BaiduPCS-Go/pcsutil/pcstime"
-	"github.com/olekukonko/tablewriter"
-	"os"
-	"strconv"
 )
 
 type (
 	// LsOptions 列目录可选项
 	LsOptions struct {
-		Total bool
+		Total           bool
+		SortByExtension bool
 	}
 
 	// SearchOptions 搜索可选项
@@ -43,14 +48,51 @@ func RunLs(pcspath string, lsOptions *LsOptions, orderOptions *baidupcs.OrderOpt
 		return
 	}
 
-	fmt.Printf("\n当前目录: %s\n----\n", pcspath)
-
 	if lsOptions == nil {
 		lsOptions = &LsOptions{}
 	}
+	if lsOptions.SortByExtension {
+		order := baidupcs.OrderAsc
+		if orderOptions != nil {
+			order = orderOptions.Order
+		}
+		sortFileDirectoryListByExtension(files, order)
+	}
+
+	fmt.Printf("\n当前目录: %s\n----\n", pcspath)
 
 	renderTable(opLs, lsOptions.Total, pcspath, files)
 	return
+}
+
+func sortFileDirectoryListByExtension(files baidupcs.FileDirectoryList, order baidupcs.Order) {
+	sort.SliceStable(files, func(i, j int) bool {
+		left, right := files[i], files[j]
+		if left == nil || right == nil {
+			return left != nil
+		}
+		if left.Isdir != right.Isdir {
+			return left.Isdir
+		}
+
+		leftName := strings.ToLower(left.Filename)
+		rightName := strings.ToLower(right.Filename)
+		leftExtension := ""
+		rightExtension := ""
+		if !left.Isdir {
+			leftExtension = strings.ToLower(path.Ext(left.Filename))
+			rightExtension = strings.ToLower(path.Ext(right.Filename))
+		}
+
+		comparison := strings.Compare(leftExtension, rightExtension)
+		if comparison == 0 {
+			comparison = strings.Compare(leftName, rightName)
+		}
+		if order == baidupcs.OrderDesc {
+			return comparison > 0
+		}
+		return comparison < 0
+	})
 }
 
 // RunSearch 执行搜索

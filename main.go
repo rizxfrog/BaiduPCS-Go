@@ -703,10 +703,11 @@ func main() {
 			},
 		},
 		{
-			Name:      "ls",
-			Aliases:   []string{"l", "ll"},
-			Usage:     "列出目录",
-			UsageText: app.Name + " ls <目录>",
+			Name:                   "ls",
+			Aliases:                []string{"l", "ll"},
+			Usage:                  "列出目录",
+			UsageText:              app.Name + " ls <目录>",
+			UseShortOptionHandling: true,
 			Description: `
 	列出当前工作目录内的文件和目录, 或指定目录内的文件和目录
 
@@ -724,65 +725,24 @@ func main() {
 	按文件大小降序排序
 	BaiduPCS-Go ls -size -desc 我的资源
 
+	按修改时间排序, 最新的在前
+	BaiduPCS-Go ls -lt 我的资源
+
+	按扩展名排序
+	BaiduPCS-Go ls -lX 我的资源
+
 	使用通配符
 	BaiduPCS-Go ls /我的*
 `,
 			Category: "百度网盘",
 			Before:   reloadFn,
 			Action: func(c *cli.Context) error {
-				orderOptions := &baidupcs.OrderOptions{}
-				switch {
-				case c.IsSet("asc"):
-					orderOptions.Order = baidupcs.OrderAsc
-				case c.IsSet("desc"):
-					orderOptions.Order = baidupcs.OrderDesc
-				default:
-					orderOptions.Order = baidupcs.OrderAsc
-				}
-
-				switch {
-				case c.IsSet("time"):
-					orderOptions.By = baidupcs.OrderByTime
-				case c.IsSet("name"):
-					orderOptions.By = baidupcs.OrderByName
-				case c.IsSet("size"):
-					orderOptions.By = baidupcs.OrderBySize
-				default:
-					orderOptions.By = baidupcs.OrderByName
-				}
-
-				pcscommand.RunLs(c.Args().Get(0), &pcscommand.LsOptions{
-					Total: c.Bool("l") || c.Parent().Args().Get(0) == "ll",
-				}, orderOptions)
+				lsOptions, orderOptions := resolveLsOptions(c)
+				pcscommand.RunLs(c.Args().Get(0), lsOptions, orderOptions)
 
 				return nil
 			},
-			Flags: []cli.Flag{
-				cli.BoolFlag{
-					Name:  "l",
-					Usage: "详细显示",
-				},
-				cli.BoolFlag{
-					Name:  "asc",
-					Usage: "升序排序",
-				},
-				cli.BoolFlag{
-					Name:  "desc",
-					Usage: "降序排序",
-				},
-				cli.BoolFlag{
-					Name:  "time",
-					Usage: "根据时间排序",
-				},
-				cli.BoolFlag{
-					Name:  "name",
-					Usage: "根据文件名排序",
-				},
-				cli.BoolFlag{
-					Name:  "size",
-					Usage: "根据大小排序",
-				},
-			},
+			Flags: lsFlags(),
 		},
 		{
 			Name:      "search",
