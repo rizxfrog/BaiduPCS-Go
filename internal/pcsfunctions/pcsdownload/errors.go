@@ -3,6 +3,8 @@ package pcsdownload
 import "errors"
 
 var (
+	// ErrDownloadFileInfoNil 文件信息为空
+	ErrDownloadFileInfoNil = errors.New("文件信息为空")
 	// ErrDownloadNotSupportChecksum 文件不支持校验
 	ErrDownloadNotSupportChecksum = errors.New("该文件不支持校验")
 	// ErrDownloadChecksumFailed 文件校验失败

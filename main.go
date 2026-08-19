@@ -1071,6 +1071,7 @@ func main() {
 					Load:                 c.Int("l"),
 					MaxRetry:             c.Int("retry"),
 					NoCheck:              c.Bool("nocheck"),
+					ForceCheck:           c.Bool("check"),
 					LinkPrefer:           c.Int("dindex"),
 					ModifyMTime:          c.Bool("mtime"),
 					FullPath:             c.Bool("fullpath"),
@@ -1124,6 +1125,10 @@ func main() {
 					Value: pcsdownload.DefaultDownloadMaxRetry,
 				},
 				cli.BoolFlag{
+					Name:  "check",
+					Usage: "强制在下载完成后校验文件大小和可用的完整文件 MD5",
+				},
+				cli.BoolFlag{
 					Name:  "nocheck",
 					Usage: "下载文件完成后不校验文件",
 				},
@@ -1139,6 +1144,39 @@ func main() {
 					Name:  "fullpath",
 					Usage: "以网盘完整路径保存到本地",
 				},
+			},
+		},
+		{
+			Name:      "verify",
+			Aliases:   []string{"check"},
+			Usage:     "校验本地文件与网盘文件",
+			UsageText: app.Name + " verify <网盘文件> <本地文件>",
+			Description: `
+	比较网盘文件和本地文件的大小及完整文件 MD5。
+	只有网盘返回可用的单文件 MD5 时才能完成 MD5 校验；目录和多分片 MD5 不支持。
+
+	示例:
+	BaiduPCS-Go verify /我的资源/1.mp4 ./1.mp4
+	BaiduPCS-Go verify '$123456789' ./1.mp4
+	BaiduPCS-Go verify %0123456789abcdef0123456789abcdef ./1.mp4
+`,
+			Category: "百度网盘",
+			Before:   reloadFn,
+			Action: func(c *cli.Context) error {
+				if c.NArg() != 2 {
+					cli.ShowCommandHelp(c, c.Command.Name)
+					return nil
+				}
+
+				err := pcscommand.RunVerify(c.Args().Get(0), c.Args().Get(1))
+				if err == nil {
+					return nil
+				}
+				if isCli {
+					fmt.Println(err)
+					return nil
+				}
+				return cli.NewExitError(err.Error(), 1)
 			},
 		},
 		{
@@ -1841,6 +1879,9 @@ func main() {
 						}
 						if c.IsSet("local_addrs") {
 							pcsconfig.Config.SetLocalAddrs(c.String("local_addrs"))
+						}
+						if c.IsSet("no_check") {
+							pcsconfig.Config.SetNoCheck(c.Bool("no_check"))
 						}
 
 						err := pcsconfig.Config.Save()

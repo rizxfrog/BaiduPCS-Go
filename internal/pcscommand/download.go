@@ -30,6 +30,7 @@ type (
 		Load                 int
 		MaxRetry             int
 		NoCheck              bool
+		ForceCheck           bool
 		ModifyMTime          bool
 		FullPath             bool
 		LinkPrefer           int
@@ -48,6 +49,16 @@ func downloadPrintFormat(load int) string {
 	return "[%s] ↓ %s/%s %s/s in %s, left %s ...\n"
 }
 
+func resolveDownloadNoCheck(configNoCheck, noCheck, forceCheck bool) bool {
+	if forceCheck {
+		return false
+	}
+	if noCheck {
+		return true
+	}
+	return configNoCheck
+}
+
 // RunDownload 执行下载网盘内文件
 func RunDownload(paths []string, options *DownloadOptions) {
 	if options == nil {
@@ -62,9 +73,7 @@ func RunDownload(paths []string, options *DownloadOptions) {
 		options.MaxRetry = pcsdownload.DefaultDownloadMaxRetry
 	}
 
-	if !options.NoCheck {
-		options.NoCheck = pcsconfig.Config.NoCheck
-	}
+	options.NoCheck = resolveDownloadNoCheck(pcsconfig.Config.NoCheck, options.NoCheck, options.ForceCheck)
 
 	if runtime.GOOS == "windows" {
 		// windows下不加执行权限
@@ -102,7 +111,7 @@ func RunDownload(paths []string, options *DownloadOptions) {
 	)
 
 	// 预测要下载的文件数量
-	file_dir_list := make([]*baidupcs.FileDirectory,0,10)
+	file_dir_list := make([]*baidupcs.FileDirectory, 0, 10)
 	for k := range paths {
 		pcs.FilesDirectoriesRecurseList(paths[k], baidupcs.DefaultOrderOptions, func(depth int, _ string, fd *baidupcs.FileDirectory, pcsError pcserror.Error) bool {
 			if pcsError != nil {
@@ -140,7 +149,7 @@ func RunDownload(paths []string, options *DownloadOptions) {
 	sort.Slice(file_dir_list, func(i, j int) bool {
 		return file_dir_list[i].Size < file_dir_list[j].Size
 	})
-	for _,v := range file_dir_list {
+	for _, v := range file_dir_list {
 		newCfg := *cfg
 		unit := pcsdownload.DownloadTaskUnit{
 			Cfg:                  &newCfg, // 复制一份新的cfg

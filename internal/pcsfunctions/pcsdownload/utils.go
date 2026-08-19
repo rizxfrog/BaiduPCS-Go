@@ -3,6 +3,8 @@ package pcsdownload
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
+
 	"github.com/qjfoidnh/BaiduPCS-Go/baidupcs"
 	"github.com/qjfoidnh/BaiduPCS-Go/internal/pcsconfig"
 	"github.com/qjfoidnh/BaiduPCS-Go/pcsutil/checksum"
@@ -13,33 +15,58 @@ import (
 	"os"
 )
 
+// FileMD5CheckResult 保存本地文件与网盘文件的 MD5 校验值。
+type FileMD5CheckResult struct {
+	LocalMD5  string
+	RemoteMD5 string
+}
+
 // CheckFileValid 检测文件有效性
 func CheckFileValid(filePath string, fileInfo *baidupcs.FileDirectory) error {
+	_, err := CheckFileMD5(filePath, fileInfo)
+	return err
+}
+
+// CheckFileMD5 计算本地文件 MD5，并与网盘记录的完整文件 MD5 比较。
+func CheckFileMD5(filePath string, fileInfo *baidupcs.FileDirectory) (*FileMD5CheckResult, error) {
+	if fileInfo == nil {
+		return nil, ErrDownloadFileInfoNil
+	}
 	if len(fileInfo.BlockList) != 1 {
-		return ErrDownloadNotSupportChecksum
+		return nil, ErrDownloadNotSupportChecksum
+	}
+
+	remoteMD5 := strings.ToLower(fileInfo.MD5)
+	decodedMD5, err := hex.DecodeString(remoteMD5)
+	if err != nil || len(decodedMD5) != 16 {
+		return nil, ErrDownloadNotSupportChecksum
 	}
 
 	f := checksum.NewLocalFileChecksum(filePath, int(baidupcs.SliceMD5Size))
-	err := f.OpenPath()
+	err = f.OpenPath()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer f.Close()
 
 	err = f.Sum(checksum.CHECKSUM_MD5)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	md5Str := hex.EncodeToString(f.MD5)
+	result := &FileMD5CheckResult{
+		LocalMD5:  md5Str,
+		RemoteMD5: remoteMD5,
+	}
 
-	if md5Str != fileInfo.MD5 { // md5不一致
+	if md5Str != remoteMD5 { // md5不一致
 		// 检测是否为违规文件
 		if IsSkipMd5Checksum(f.Length, md5Str) {
-			return ErrDownloadFileBanned
+			return result, ErrDownloadFileBanned
 		}
-		return ErrDownloadChecksumFailed
+		return result, ErrDownloadChecksumFailed
 	}
-	return nil
+	return result, nil
 }
 
 // FileExist 检查文件是否存在,
