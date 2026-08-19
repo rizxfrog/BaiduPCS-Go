@@ -463,7 +463,15 @@ BaiduPCS-Go cd -l 我的资源
 
 # 使用通配符
 BaiduPCS-Go cd /我的*
+
+# 按当前目录子目录的 fs_id 切换；系统 Shell 中需要引用 $ 参数
+BaiduPCS-Go cd '$123456789'
+
+# 按当前目录子目录的 MD5 切换
+BaiduPCS-Go cd %0123456789abcdef0123456789abcdef
 ```
+
+`$<fs_id>` 和 `%<MD5>` 只匹配当前工作目录的直接子项，可代替需要引用已有网盘文件或目录的路径参数，例如 `cd`、`ls`、`tree`、`meta`、`rm`、`download`、`locate`、`share set`、`export` 以及 `cp`/`mv` 的源路径。新建名称和 `cp`/`mv` 的目标路径不会被解析。MD5 重复时请改用 `fs_id`；目录是否具有 MD5 取决于百度网盘接口返回的数据。
 
 ## 输出工作目录
 ```
@@ -614,6 +622,12 @@ BaiduPCS-Go config set -savedir D:/Downloads
 
 # 下载 /我的资源/1.mp4
 BaiduPCS-Go d /我的资源/1.mp4
+
+# 按当前目录项目的 fs_id 下载；系统 Shell 中需要引用 $ 参数
+BaiduPCS-Go d '$123456789'
+
+# 按当前目录文件的 MD5 下载
+BaiduPCS-Go d %0123456789abcdef0123456789abcdef
 
 # 下载 /我的资源 整个目录!!
 BaiduPCS-Go d /我的资源

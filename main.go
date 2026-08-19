@@ -682,6 +682,12 @@ func main() {
 
 	使用通配符:
 	BaiduPCS-Go cd /我的*
+
+	按当前目录子目录的 fs_id 切换（系统 Shell 中需引用 $）:
+	BaiduPCS-Go cd '$123456789'
+
+	按当前目录子目录的 MD5 切换:
+	BaiduPCS-Go cd %0123456789abcdef0123456789abcdef
 `,
 			Before: reloadFn,
 			After:  saveFunc,
@@ -1005,6 +1011,12 @@ func main() {
 
 	下载 /我的资源/1.mp4
 	BaiduPCS-Go d /我的资源/1.mp4
+
+	按当前目录项目的 fs_id 下载（系统 Shell 中需引用 $）
+	BaiduPCS-Go d '$123456789'
+
+	按当前目录文件的 MD5 下载
+	BaiduPCS-Go d %0123456789abcdef0123456789abcdef
 
 	下载 /我的资源 整个目录!!
 	BaiduPCS-Go d /我的资源
